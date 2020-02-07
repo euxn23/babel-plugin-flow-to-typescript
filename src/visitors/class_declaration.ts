@@ -4,6 +4,7 @@ import {
   isTypeParameterDeclaration,
   ClassImplements,
   ClassExpression,
+  ClassBody,
 } from '@babel/types';
 import { NodePath } from '@babel/traverse';
 
@@ -12,6 +13,7 @@ import { convertTypeParameterInstantiation } from '../converters/convert_type_pa
 import { convertTypeParameterDeclaration } from '../converters/convert_type_parameter_declaration';
 import { replaceWith } from '../utils/replaceWith';
 import { transformClassBody } from '../transforms/transform_class_body';
+import { narrowNodePathsToOne } from '../utils/narrowNodePathsToOne';
 
 export function ClassDeclaration(path: NodePath<ClassDeclaration | ClassExpression>) {
   const node = path.node;
@@ -19,14 +21,17 @@ export function ClassDeclaration(path: NodePath<ClassDeclaration | ClassExpressi
   const superTypeParameters = node.superTypeParameters;
   if (isTypeParameterInstantiation(superTypeParameters)) {
     replaceWith(
-      path.get('superTypeParameters'),
+      narrowNodePathsToOne(path.get('superTypeParameters')),
       convertTypeParameterInstantiation(superTypeParameters),
     );
   }
 
   const typeParameters = node.typeParameters;
   if (isTypeParameterDeclaration(typeParameters)) {
-    replaceWith(path.get('typeParameters'), convertTypeParameterDeclaration(typeParameters));
+    replaceWith(
+      narrowNodePathsToOne(path.get('typeParameters')),
+      convertTypeParameterDeclaration(typeParameters),
+    );
   }
 
   const classImplements = node.implements;
@@ -41,5 +46,5 @@ export function ClassDeclaration(path: NodePath<ClassDeclaration | ClassExpressi
     }
   }
 
-  transformClassBody(path.get('body'));
+  transformClassBody(narrowNodePathsToOne(path.get('body')) as NodePath<ClassBody>);
 }
